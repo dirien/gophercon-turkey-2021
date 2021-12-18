@@ -53,7 +53,7 @@ func Docker() error {
 }
 
 func Build() error {
-	mg.Deps(Clean)
+	mg.Deps(Clean, InstallDeps)
 	fmt.Println("Building...")
 	return sh.Run("go", "build", "-o", fmt.Sprintf("%s/%s", dist, binary), "-ldflags", fmt.Sprintf(ldflags, version, getBuild()), ".")
 }

@@ -1,0 +1,15 @@
+FROM golang:1.17-alpine3.15 as builder
+WORKDIR /app/
+COPY . .
+ARG VERSION
+ARG BUILD
+RUN go mod tidy
+RUN go build -o gophercon-turkey-2021 -ldflags "-X main.version=$VERSION  -X main.build=$BUILD" main.go
+
+
+FROM alpine:3.15.0
+COPY --from=builder /app/gophercon-turkey-2021 /app/gophercon-turkey-2021
+RUN adduser -D gopher
+RUN chown -R gopher:gopher /app
+USER gopher
+CMD ["/app/gophercon-turkey-2021"]
