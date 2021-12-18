@@ -17,5 +17,5 @@ func init() {
 }
 
 func main() {
-	println(fmt.Sprintf("Hello, GopherCon Turkey! This is build %s and version %s", build, version))
+	fmt.Println(fmt.Sprintf("Hello, GopherCon Turkey! This is build %s and version %s", build, version))
 }
