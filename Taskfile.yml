@@ -1,0 +1,85 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  GO111MODULE: on
+
+vars:
+  VERSION: '0.1.0'
+  BUILD:
+    sh: git rev-parse --short HEAD
+  LDFLAGS: -ldflags "-X main.version={{.VERSION}}  -X main.build={{.BUILD}}"
+  DIST: dist
+  BINARY_NAME: gophercon-turkey-2021
+  PLATFORMS: |
+    darwin
+    linux
+    windows
+  ARCHS: |
+    amd64  
+
+tasks:
+
+  clean:
+    desc: "Clean up the dist directory"
+    cmds:
+      - rm -rf {{.DIST}}
+
+  setup:
+    deps:
+      - clean
+    desc: Install dependencies
+    cmds:
+      - go mod tidy
+
+  test:
+    deps:
+      - setup
+    desc: Run tests
+    cmds:
+      - go test ./...
+
+  lint:
+    deps:
+      - setup
+    desc: Run linter
+    cmds:
+      - golangci-lint run ./...
+
+  build:
+    deps:
+      - setup
+    desc: Build the binary
+    sources:
+      - ./**/*.go
+    generates:
+      - ./goreleaser
+    cmds:
+      - go build -o {{.DIST}}/{{.BINARY_NAME}} {{.LDFLAGS}}
+
+  docker:
+    deps:
+      - buildAll
+    desc: Build the docker image
+    cmds:
+      - docker build -t {{.BINARY_NAME}}:{{.VERSION}} .
+
+  buildAll:
+    deps:
+      - setup
+    desc: Build all binaries
+    cmds:
+      - |
+        {{ $platforms := .PLATFORMS -}}
+        {{ $archs := .ARCHS -}}
+        {{ $binaryName := .BINARY_NAME -}}
+        {{ $dist := .DIST -}}
+        {{ $ldflags := .LDFLAGS -}}
+        {{range $i, $platform := $platforms | splitLines -}}
+          {{range $j, $arch := $archs | splitLines -}}
+              {{ if and $platform $arch -}}
+                GOOS={{ $platform }} GOARCH={{ $arch }} go build -o {{ $dist }}/{{ $binaryName }}-{{ $platform }}-{{ $arch }} {{ $ldflags }}
+              {{ end -}}
+          {{end}}
+        {{end}}
